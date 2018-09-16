@@ -87,7 +87,7 @@ This program is rather computation intensive resulting in generic laptops and PC
 Our team explored traffic light classification in two ways.
 
 [camera_image]: ./imgs/camera_image_sim.png
-[cropped_traffic_light]: ./imgs/tl_crop.png
+[cropped_traffic_light]: ./imgs/tl_crop.jpeg
 
 The approach of Konstantin Selyunin, was to use the pre-trained 
 `SSD MobileNet` model pre-trained on the [`COCO`](http://cocodataset.org/#home) data set.
@@ -121,13 +121,13 @@ The pipeline description is as follows:
 
 6. detect the color
 
-[red1]: ./imgs/tl_detected_red.gif
-[yellow1]: ./imgs/tl_detected_yellow.gif
-[green1]: ./imgs/tl_detected_green.gif
+[red1]: ./imgs/tl_detected_red.png
+[yellow1]: ./imgs/tl_detected_yellow.png
+[green1]: ./imgs/tl_detected_green.png
 
 | red | yellow | green |
 |-----|--------|-------|
-|![red][red1] | ![yellow][yellow1] | ![green][green] |
+|![red][red1] | ![yellow][yellow1] | ![green][green1] |
 
 
 6. we return the detected color to `tl_detector`
