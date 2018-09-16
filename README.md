@@ -1,5 +1,14 @@
 # CarND CAPSTONE
 
+## Team Members
+
+* Duncan Iglesias (Team Lead) duncan.iglesias@gmail.com
+* Aaron Zheng Li gowithwi@gmail.com
+* Konstantin Selyunin selyunin.k.v@gmail.com
+* Meng Xingyu mengxy121@163.com
+* Nirav Shah reachnirav@gmail.com
+
+
 ## Project Overview
 
 This is the final project for the Self Driving Car Engineer Nano degree that brings together everything covered over the course of this program. Here we get to explore a real life example that combines computer vision, sensor fusion, and path planning to allow a vehicle to navigate through its environment while obeying traffic lights and obstacles. We borrow concepts learned from previous projects to publish waypoints ahead of the vehicle to indicate the desired path to follow and use neural networks to classify images and predict the state of a traffic light for our path planning controller. The initial project is built and tested on the Unity simulator provided by Udacity which gets uploaded to Carla once approved!
@@ -75,7 +84,103 @@ This program is rather computation intensive resulting in generic laptops and PC
 
 ## Traffic Light Classifier
 
-... coming soon!
+Our team explored traffic light classification in two ways.
+
+### First approach to traffic sign classification
+
+This program can be divided into two steps.
+
+- Identify the traffic light in the image: In this step the tensorflow object
+  detection API is used to identify the location of traffic light in the
+  sequence of images published by simulator. Several models from the API were
+  tried and the `rfcn_resnet101_coco_2018_01_28` model seems to give accurate
+  prediction of the traffic light with reasonable size of the model. The
+  classifier is initialized by combining the chunks into a model protobuf file.
+  Chunks were made as the actual model size is still too big to upload in
+  Github. The `get_classification` method runs the tensorflow model on the
+  images received from simulator and detects the location of traffic light if
+  any. If the traffic light is not found then the state is assumed to be
+  unknown. And when the valid traffic light is detected it is passed on to the
+  `red_yellow_green` method for classification of traffic light. Left image
+  shown below is an example output of detected traffic light. 
+
+- Classify the state of the traffic light: If the traffic light is detected
+  then the bounding boxes detected by API is used to crop the image only where
+  the traffic light is seen as shown in the middle image below. The approach
+  used to classify traffic light is simple but mostly accurate. The algorithm
+  relies on the fact that the light when switched on has significant higher
+  brightness than when switched off. The HSV (Hue-Saturation-Value
+  a.k.a.(Brightness)) colorspace can be used to detect the brightness. The
+  cropped image is further split into three 1/3rd size images to calculate the
+  brightness and then compared with overall brightness. The highest ratio
+  decides whether the light was red / yellow or green. In the example image
+  below the split of brightness was following:
+
+| Red | Yellow | Green |
+|-----|--------|-------|
+| 40% | 32%    | 28%   |
+
+Hence, the algorithm classified that the traffic light is red. The assumption is that the red light is the topmost/rightmost light in the traffic light box.
+
+<p align="center">
+ <img src="./res/full_image.png" width=500>
+ <img src="./res/cropped_tl.png" width=170>
+ <img src="./res/split_tl.png" width=170>
+</p>
+
+### Second approach to traffic sign classification
+
+[camera_image]: ./imgs/camera_image_sim.png
+[cropped_traffic_light]: ./imgs/tl_crop.jpeg
+
+In the second approach  we used the 
+`SSD MobileNet` model pre-trained on the [`COCO`](http://cocodataset.org/#home) data set.
+We used a model from the [`tensorflow/models`](https://github.com/tensorflow/models) zoo repository 
+and integrated traffic light detection in our pipeline. 
+The `COCO` data set, among other image classes, contains a *traffic light* (`id`: 10) 
+and a model, pre-trained on this data set can be used to identify the traffic lights.
+
+This, however does not detect the colors on the traffic light. 
+For detecting the color, we first crop part of the image containing the 
+traffic light, and then converted an image to `HSV` color space.
+In `HSV` we exprimentally found the thresholds that correspond to 
+masks of red, yellow, and green lights.
+We then used these thresholds to detect the current light signal.
+
+The pipeline description is as follows:
+
+1. upon receiving an image, we the `image_cb` callback is called in `tl_detector`
+
+<img width="300" alt="camera_image" src="./imgs/camera_image_sim.png">
+
+2. the image is converted from  `sensor_msgs/Image` to `numpy array` and passed to the classifier
+
+3. the detection step is executed on the image, returning `classes`, `scores`, and `boxes`
+
+4. we collect all the traffic lights with the detection probability greater then a threshold
+
+5. we then use the detection boxes to crop these traffic lights from the image 
+
+![Cropped detected traffic light][cropped_traffic_light]
+
+6. detect the color
+
+[red1]: ./imgs/tl_detected_red.png
+[yellow1]: ./imgs/tl_detected_yellow.png
+[green1]: ./imgs/tl_detected_green.png
+
+| red | yellow | green |
+|-----|--------|-------|
+|![red][red1] | ![yellow][yellow1] | ![green][green1] |
+
+
+6. finally, we return the detected color to `tl_detector`
+
+Here we see the `RViz` visualization of the `/image_color` topic and the corresponding
+output from the classifier
+
+[gif]: ./imgs/classifier.gif
+![Classifier][gif]
 
 
 ## Track Test
