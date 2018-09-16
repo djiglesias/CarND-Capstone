@@ -107,7 +107,7 @@ The pipeline description is as follows:
 
 1. upon receiving an image, we the `image_cb` callback is called in `tl_detector`
 
-![Camera from simulator][camera_image]
+<img width="300" alt="camera_image" src="./imgs/camera_image_sim.png">
 
 2. the image is converted from  `sensor_msgs/Image` to `numpy array` and passed to the classifier
 
