@@ -102,7 +102,15 @@ class TLDetector(object):
         self.camera_image = msg
         state = self.classify_traffic_light(self.camera_image)
 
-        light_wp, state = self.process_traffic_lights()
+        light_wp, _ = self.process_traffic_lights()
+        if state == 0:
+            rospy.logerr("TRAFFIC_LIGHT: RED")
+        elif state == 1:
+            rospy.logerr("TRAFFIC_LIGHT: YELLOW")
+        elif state == 2:
+            rospy.logerr("TRAFFIC_LIGHT: GREEN")
+        elif state == 4:
+            rospy.logerr("TRAFFIC_LIGHT: UNKNOWN")
 
         '''
         Publish upcoming red lights at camera frequency.
