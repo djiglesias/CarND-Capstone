@@ -50,7 +50,6 @@ class TLClassifier(object):
         #            (right, top), (left, top)], width=8, fill=box_color)
         # here we get a traffic classified traffic light
         traffic_light = image_pil.crop([int(left), int(top), int(right), int(bottom)])
-        # TODO: find circle using Hough transform and detect color of pixels inside the circle
         return traffic_light
 
     def invoke_tensorflow_classifier(self, image):
@@ -80,6 +79,17 @@ class TLClassifier(object):
             feed_dict={image_tensor: image_np_expanded})
         return boxes, scores, classes, num
 
+    def detect_pixel_ratio(self, image_hsv, mask, intensity_threshold):
+        bool_mask = mask > 0
+        template = np.zeros_like(image_hsv, np.uint8)
+        template[bool_mask] = image_hsv[bool_mask]
+        # convert resulting image to grayscale
+        template_rgb = cv2.cvtColor(template, cv2.COLOR_HSV2RGB)
+        template_gray = cv2.cvtColor(template_rgb, cv2.COLOR_RGB2GRAY)
+        target_pixels = len(np.where(template_gray >= intensity_threshold)[0])
+        other_pixels = len(np.where(template_gray < intensity_threshold)[0])
+        return target_pixels, other_pixels
+
     def detect_traffic_light(self, image_pil):
         """
         :param image_pil: PIL.Image._ImageCrop -> cropped traffic light image
@@ -99,49 +109,44 @@ class TLClassifier(object):
 
         # convert to hsv
         image_hsv = cv2.cvtColor(image_np, cv2.COLOR_RGB2HSV)
-
-        # mask of red (0,0,0) ~ (15, 255,255) and
+        intensity_threshold = 100
+        # mask of red (0,50,50) ~ (15, 255,255) and (168, 50, 50) ~ (180, 255, 255)
         mask_red1 = cv2.inRange(image_hsv, (0, 50, 50), (15, 255, 255))
         mask_red2 = cv2.inRange(image_hsv, (168, 50, 50), (180, 255, 255))
         mask_red = mask_red1 | mask_red2
-        bool_mask = mask_red > 0
-        template = np.zeros_like(image_hsv, np.uint8)
-        template[bool_mask] = image_hsv[bool_mask]
-        # convert resulting image to grayscale
-        template_rgb = cv2.cvtColor(template, cv2.COLOR_HSV2RGB)
-        template_gray = cv2.cvtColor(template_rgb, cv2.COLOR_RGB2GRAY)
-        # plt.plot(np.where(template_gray > 100)[0], np.where(template_gray > 100)[1], linestyle='None', marker='.');
-        # plt.show()
-        intensity_threshold = 100
-        red_pixels = len(np.where(template_gray > intensity_threshold)[0])
-        other_pixels = len(np.where(template_gray < intensity_threshold)[0])
+        red_pixels, not_red_pixels = self.detect_pixel_ratio(image_hsv,
+                                                             mask_red,
+                                                             intensity_threshold)
+        red_pixels_percent = 1. * red_pixels / (red_pixels + not_red_pixels)
+
+        # mask of yellow in hsv (16, 50, 50) ~ (35, 255, 255)
+        mask_yellow = cv2.inRange(image_hsv, (16, 50, 50), (35, 255, 255))
+        yellow_pixels, not_yellow_pixels = self.detect_pixel_ratio(image_hsv,
+                                                                   mask_yellow,
+                                                                   intensity_threshold)
+        yellow_pixels_percent = 1. * yellow_pixels / (yellow_pixels + not_yellow_pixels)
+
+        # mask of green in hsv (36,50,50) ~ (70, 255,255)
+        mask_green = cv2.inRange(image_hsv, (36, 50, 50), (70, 255, 255))
+        green_pixels, not_green_pixels = self.detect_pixel_ratio(image_hsv,
+                                                                 mask_green,
+                                                                 intensity_threshold)
+        green_pixels_percent = 1. * green_pixels / (green_pixels + not_green_pixels)
         threshold_percent = 0.029
-        red_pixels_percent = 1. * red_pixels / other_pixels
+
         if red_pixels_percent > threshold_percent:
             return TrafficLight.RED
-
-        # mask o yellow (15,0,0) ~ (35, 255, 255)
-        mask_yellow = cv2.inRange(image_hsv, (16, 50, 50), (35, 255, 255))
-        bool_mask = mask_yellow > 0
-        template = np.zeros_like(image_hsv, np.uint8)
-        template[bool_mask] = image_hsv[bool_mask]
-        # convert resulting image to grayscale
-        template_rgb = cv2.cvtColor(template, cv2.COLOR_HSV2RGB)
-        template_gray = cv2.cvtColor(template_rgb, cv2.COLOR_RGB2GRAY)
-        # plt.plot(np.where(template_gray > 100)[0], np.where(template_gray > 100)[1], linestyle='None', marker='.');
-        # plt.show()
-        # mask of green (36,0,0) ~ (70, 255,255)
-        mask_green = cv2.inRange(image_hsv, (36, 50, 50), (70, 255, 255))
+        elif yellow_pixels_percent > threshold_percent:
+            return TrafficLight.YELLOW
+        elif green_pixels_percent > threshold_percent:
+            return TrafficLight.GREEN
+        else:
+            return TrafficLight.UNKNOWN
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
-
-        Args:
-            image (cv::Mat): image containing the traffic light
-
-        Returns:
-            int: ID of traffic light color (specified in styx_msgs/TrafficLight)
-
+        Args: image (cv::Mat): image containing the traffic light
+        Returns: int: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
         # get classification from tensorflow model
         boxes, scores, classes, _ = self.invoke_tensorflow_classifier(image)
@@ -160,4 +165,7 @@ class TLClassifier(object):
             traffic_light_color = self.detect_traffic_light(traffic_light_image)
             traffic_lights.append(traffic_light_color)
 
-        return TrafficLight.UNKNOWN
+        if len(traffic_lights) > 0:
+            return max(set(traffic_lights), key=traffic_lights.count)
+        else:
+            return TrafficLight.UNKNOWN
