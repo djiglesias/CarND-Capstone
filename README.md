@@ -75,7 +75,23 @@ This program is rather computation intensive resulting in generic laptops and PC
 
 ## Traffic Light Classifier
 
-... coming soon!
+This program can be divided into two steps.
+
+- Identify the traffic light in the image: In this step the tensorflow object detection API is used to identify the location of traffic light in the sequence of images published by simulator. Several models from the API were tried and the `rfcn_resnet101_coco_2018_01_28` model seems to give accurate prediction of the traffic light with reasonable size of the model. The classifier is initialized by combining the chunks into a model protobuf file. Chunks were made as the actual model size is still too big to upload in Github. The `get_classification` method runs the tensorflow model on the images received from simulator and detects the location of traffic light if any. If the traffic light is not found then the state is assumed to be unknown. And when the valid traffic light is detected it is passed on to the `red_yellow_green` method for classification of traffic light. Left image shown below is an example output of detected traffic light. 
+
+- Classify the state of the traffic light: If the traffic light is detected then the bounding boxes detected by API is used to crop the image only where the traffic light is seen as shown in the middle image below. The approach used to classify traffic light is simple but mostly accurate. The algorithm relies on the fact that the light when switched on has significant higher brightness than when switched off. The HSV (Hue-Saturation-Value a.k.a.(Brightness)) colorspace can be used to detect the brightness. The cropped image is further split into three 1/3rd size images to calculate the brightness and then compared with overall brightness. The highest ratio decides whether the light was red / yellow or green. In the example image below the split of brightness was following:
+
+| Red | Yellow | Green |
+|-----|--------|-------|
+| 40% | 32%    | 28%   |
+
+Hence, the algorithm classified that the traffic light is red. The assumption is that the red light is the topmost/rightmost light in the traffic light box.
+
+<p align="center">
+ <img src="./res/full_image.png" width=500>
+ <img src="./res/cropped_tl.png" width=170>
+ <img src="./res/split_tl.png" width=170>
+</p>
 
 
 ## Track Test
