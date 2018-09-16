@@ -84,7 +84,59 @@ This program is rather computation intensive resulting in generic laptops and PC
 
 ## Traffic Light Classifier
 
-... coming soon!
+Our team explored traffic light classification in two ways.
+
+[camera_image]: ./img/camera_image_sim.png
+[cropped_traffic_light]: ./img/tl_crop.png
+
+The approach of Konstantin Selyunin, was to use the pre-trained 
+`SSD MobileNet` model pre-trained on the [`COCO`](http://cocodataset.org/#home) data set.
+We used a model from the [`tensorflow/models`](https://github.com/tensorflow/models) zoo repository 
+and integrated traffic light detection in our pipeline. 
+The `COCO` data set, among other image classes, contains a *traffic light* (`id`: 10) 
+and a model, pre-trained on this data set can be used to identify the traffic lights.
+
+This, however does not detect the colors on the traffic light. 
+For detecting the color, we first crop part of the image containing the 
+traffic light, and then converted an image to `HSV` color space.
+In `HSV` we exprimentally found the thresholds that correspond to 
+masks of red, yellow, and green lights.
+We then used these thresholds to detect the current light signal.
+
+The pipeline description is as follows:
+
+1. upon receiving an image, we the `image_cb` callback is called in `tl_detector`
+
+![Camera from simulator][camera_image]
+
+2. the image is converted from  `sensor_msgs/Image` to `numpy array` and passed to the classifier
+
+3. the detection step is executed on the image, returning `classes`, `scores`, and `boxes`
+
+4. we collect all the traffic lights with the detection probability greater then a threshold
+
+5. we then crop these traffic lights from the image 
+
+![Cropped detected traffic light][cropped_traffic_light]
+
+6. detect the color
+
+[red1]: ./img/tl_detected_red.gif
+[yellow1]: ./img/tl_detected_yellow.gif
+[green1]: ./img/tl_detected_green.gif
+
+| red | yellow | green |
+|-----|--------|-------|
+|![red][red1] | ![yellow][yellow1] | ![green][green] |
+
+
+6. we return the detected color to `tl_detector`
+
+Here we see the `RViz` visualization of the `/image_color` topic and the corresponding
+output from the classifier
+
+[gif]: ./img/classifier.gif
+![Classifier][gif]
 
 
 ## Track Test
