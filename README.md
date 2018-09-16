@@ -115,7 +115,7 @@ The pipeline description is as follows:
 
 4. we collect all the traffic lights with the detection probability greater then a threshold
 
-5. we then crop these traffic lights from the image 
+5. we then use the detection boxes to crop these traffic lights from the image 
 
 ![Cropped detected traffic light][cropped_traffic_light]
 
@@ -130,7 +130,7 @@ The pipeline description is as follows:
 |![red][red1] | ![yellow][yellow1] | ![green][green1] |
 
 
-6. we return the detected color to `tl_detector`
+6. finally, we return the detected color to `tl_detector`
 
 Here we see the `RViz` visualization of the `/image_color` topic and the corresponding
 output from the classifier
