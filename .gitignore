@@ -1,6 +1,8 @@
 *.py[cod]
+*ipynb
 
 build
 devel
 
 profile.tmp
+.vscode/

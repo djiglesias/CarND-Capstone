@@ -20,7 +20,6 @@ class TLClassifier(object):
             # gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.4),
             # device_count={'GPU': 1}
         )
-        # rospy.logerr("TLClassifier" + os.getcwd())
         model = os.path.join(os.getcwd(), 'light_classification/frozen_inference_graph.pb')
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
