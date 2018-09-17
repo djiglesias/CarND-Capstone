@@ -85,7 +85,7 @@ We then used these thresholds to detect the current light signal. The classify p
 1. A new image is received from the simulator to the image callback function, `image_cb`, in the `tl_detector` node which subscribes to ROS topic `/image_color`.
 
 <p align="center">
-    <img src="./res/camera_image_sim.png" width=250>
+    <img src="./res/camera_image_sim.png" width=350>
 </p>
 
 2. The image is converted from a ROS message type `sensor_msgs/Image` to a `numpy array` for compatibility with OpenCV functions used by the TLClassifier.
@@ -97,9 +97,9 @@ We then used these thresholds to detect the current light signal. The classify p
 5. The bounding boxes that meet the threshold are used to crop traffic light images into a series of smaller images containing only the traffic lights.
 
 <p align="center">
-    <img src="./res/camera_image_sim_1.png" width=83>
-    <img src="./res/camera_image_sim_2.png" width=83>
-    <img src="./res/camera_image_sim_3.png" width=83>
+    <img src="./res/camera_image_sim_1.png" width=150>
+    <img src="./res/camera_image_sim_2.png" width=150>
+    <img src="./res/camera_image_sim_3.png" width=150>
 </p>
 
 6. The images are conditioned for color to produce a grey scaled image of the traffic light. The coordinates of the lighter regions of the image are averaged to return the position of the active light which is either red (left), yellow (center), or green (right).
@@ -116,7 +116,11 @@ We then used these thresholds to detect the current light signal. The classify p
     <img src="./res/classifier.gif" width=550>
 </p>
 
-### Unity Simulator
+### Other Method Used
+
+...
+
+## Unity Simulator
 
 This program is rather computation intensive resulting in generic laptops and PCs struggling to keep up with the flow of data between the ROS nodes and the Unity simulator. Here are some tweaks that we made to the project to help run on "normal" people computers:
 
