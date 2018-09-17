@@ -10,20 +10,21 @@ class TLClassifier(object):
     def __init__(self):
         #TODO load classifier
         MODELCHUNK_BASE_DIR = rospy.get_param('~model_path')
-        #rospy.logwarn(MODEL_BASE_DIR)
+        # rospy.logwarn(MODEL_BASE_DIR)
         PATH_TO_MODEL = MODELCHUNK_BASE_DIR + '/rfcn_resnet101_coco_2018_01_28/frozen_inference_graph.pb'
         # reassemble the model from chunks. credit goes to team vulture for this idea
-        output = open(PATH_TO_MODEL, 'wb')
-        frozen_model_path = os.path.dirname(MODELCHUNK_BASE_DIR+'/rfcn_resnet101_coco_2018_01_28/')
-        chunks = os.listdir(frozen_model_path)
-        chunks.sort()
-        for filename in chunks:
-            filepath = os.path.join(frozen_model_path, filename)
-            with open(filepath, 'rb') as fileobj:
-                for chunk in iter(partial(fileobj.read, self.readsize), ''):
-                    output.write(chunk)
-        output.close()
-        rospy.loginfo("Model recreated to run for TL detection")
+        # output = open(PATH_TO_MODEL, 'wb')
+        # frozen_model_path = os.path.dirname(MODELCHUNK_BASE_DIR+'/rfcn_resnet101_coco_2018_01_28/')
+        # chunks = os.listdir(frozen_model_path)
+        # chunks.sort()
+        # chunksize = 1024
+        # for filename in chunks:
+        #     filepath = os.path.join(frozen_model_path, filename)
+        #     with open(filepath, 'rb') as fileobj:
+        #         for chunk in iter(partial(fileobj.read, self.readsize), ''):
+        #             output.write(chunk)
+        # output.close()
+        # rospy.loginfo("Model recreated to run for TL detection")
 
         self.DETECTION_THRESHOLD = 0.9
         self.COCO_TL_NUM = 10
