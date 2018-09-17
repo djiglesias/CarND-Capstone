@@ -2,11 +2,11 @@
 
 ## Team Members
 
-* Duncan Iglesias (Team Lead) duncan.iglesias@gmail.com
-* Konstantin Selyunin selyunin.k.v@gmail.com
-* Aaron Zheng Li gowithwi@gmail.com
-* Meng Xingyu mengxy121@163.com
-* Nirav Shah reachnirav@gmail.com
+* Duncan Iglesias (Team Lead): duncan.iglesias@gmail.com
+* Konstantin Selyunin (Traffic Light Detection) selyunin.k.v@gmail.com
+* Nirav Shah (Traffic Light Detection): reachnirav@gmail.com
+* Aaron Zheng Li (Waypoint Updater): gowithwi@gmail.com
+* Meng Xingyu (Drive-By-Wire): mengxy121@163.com
 
 
 ## Project Overview
@@ -27,7 +27,7 @@ View the project outline and how to download and bringup the source code from th
  Open the term 3 simulator, which can be downloaded [here](https://github.com/udacity/CarND-Capstone/releases), then disable the manual driving icon and enable the camera for traffic light updates to be sent to the path planning controller!
 
 <p align="center">
- <img src="./res/traffic_light.gif" width=550>
+    <img src="./res/traffic_light.gif" width=550>
 </p>
 
 ## Building the ROS Nodes
@@ -39,7 +39,7 @@ The first step of the project is to get the ROS controller to publish a sample o
 The track is relatively simple as shown below by the blue line with the traffic lights shown as red dots. However, this section only displays the leading N waypoints ahead of the car since there is no data related to the traffic lights. The output of this node publishes the list of leading waypoinys ahead of the car to `/final_waypoints` which is used by the next section for controlling the car via DBW.
 
 <p align="center">
- <img src="./res/track.png" width=550>
+    <img src="./res/track.png" width=550>
 </p>
 
 ### Drive-By-Wire Controller
@@ -55,11 +55,10 @@ The Waypoint Updater (partial) and DBW nodes allow the vehicle to successfully d
 This node subscribes to `/current_pose` which provides the current position (x,y) of the vehicle on the track which is used to search for the closest leading traffic light on the track. Once the traffic light is found the index of that light is published to `/traffic_waypoint` which indicates the next traffic light needed by the Waypoint Updater node. 
 
 <p align="center">
- <img src="./res/green.png" width=280>
- <img src="./res/yellow.png" width=280>
- <img src="./res/red.png" width=280>
+    <img src="./res/green.png" width=280>
+    <img src="./res/yellow.png" width=280>
+    <img src="./res/red.png" width=280>
 </p>
-
 
 ### Waypoint Updater (Full)
 
@@ -67,7 +66,57 @@ The final step is to add the logic for obeying the traffic lights where red indi
 
 In the event that a traffic light is green, the simulator will proceed as before and maintain speed (or reset speed if starting from rest), however, if the traffic light is yellow or red then the deceleration function is called to recalculate the `final_waypoints` topic being published to adhere to the current trajectory in a slowing order where the last waypoint lays just behind the intersection stop line.
 
-### Run Simulator
+## Traffic Light Classifier
+
+Our team explored two methods of classifying the state of a traffic light:
+1. Pre-trained 
+`SSD MobileNet` model pre-trained on the [`COCO`](http://cocodataset.org/#home) data set.
+2. ...
+
+### SSD MobileNet Classifier
+
+Using a model from the [`tensorflow/models`](https://github.com/tensorflow/models) zoo repository and integrated traffic light detection in our pipeline. The `COCO` data set, among other image classes, contains a *traffic light* (`id`: 10) and a model, pre-trained on this data set can be used to identify the traffic lights. This, however does not detect the colors on the traffic light. 
+For detecting the color, we first crop part of the image containing the 
+traffic light, and then converted an image to `HSV` color space.
+In `HSV` we exprimentally found the thresholds that correspond to 
+masks of red, yellow, and green lights.
+We then used these thresholds to detect the current light signal. The classify pipeline proceded as follows:
+
+1. A new image is received from the simulator to the image callback function, `image_cb`, in the `tl_detector` node which subscribes to ROS topic `/image_color`.
+
+<p align="center">
+    <img src="./res/camera_image_sim.png" width=250>
+</p>
+
+2. The image is converted from a ROS message type `sensor_msgs/Image` to a `numpy array` for compatibility with OpenCV functions used by the TLClassifier.
+
+3. The detection step is executed on the image to determine the location of the traffic light, if any, and returns `classes`, `scores`, and `boxes` for use in determining the state of the lights.
+
+4. The returned parameters from the detection step are filtered for their respective probabilities and only those that meet the set threshold are passed on for further consideration.
+
+5. The bounding boxes that meet the threshold are used to crop traffic light images into a series of smaller images containing only the traffic lights.
+
+<p align="center">
+    <img src="./res/camera_image_sim_1.png" width=83>
+    <img src="./res/camera_image_sim_2.png" width=83>
+    <img src="./res/camera_image_sim_3.png" width=83>
+</p>
+
+6. The images are conditioned for color to produce a grey scaled image of the traffic light. The coordinates of the lighter regions of the image are averaged to return the position of the active light which is either red (left), yellow (center), or green (right).
+
+<p align="center">
+    <img src="./res/tl_detected_red.png" width=150 title="Red">
+    <img src="./res/tl_detected_yellow.png" width=150>
+    <img src="./res/tl_detected_green.png" width=150>
+</p>
+
+6. The traffic light state is returned to the `tl_detector` node. Which can be visualized using `RViz` subscribed to the `/image_color` topic with a terminal open.
+
+<p align="center">
+    <img src="./res/classifier.gif" width=550>
+</p>
+
+### Unity Simulator
 
 This program is rather computation intensive resulting in generic laptops and PCs struggling to keep up with the flow of data between the ROS nodes and the Unity simulator. Here are some tweaks that we made to the project to help run on "normal" people computers:
 
@@ -77,66 +126,9 @@ This program is rather computation intensive resulting in generic laptops and PC
 
 - during runtime in automonmous mode the zoom was maxed in on car and pointed at road to limit rendering of background features in the distance
 
-- the incoming `/image_color` topic published 800x800 images from the vehicle was throttled from 10 Hz to 2 Hz to reduce the amount of processing happening under the hood
+- the incoming `/image_color` topic published 800x600 images from the vehicle was throttled from 10 Hz to 2 Hz to reduce the amount of processing happening under the hood
 
 - running the simulator with screen resolution at 640x480 and the graphics quality as fastest provided the best result for reducing the required rendering by the computer
-
-
-## Traffic Light Classifier
-
-Our team explored traffic light classification in two ways.
-
-[camera_image]: ./imgs/camera_image_sim.png
-[cropped_traffic_light]: ./imgs/tl_crop.jpeg
-
-The approach of Konstantin Selyunin, was to use the pre-trained 
-`SSD MobileNet` model pre-trained on the [`COCO`](http://cocodataset.org/#home) data set.
-We used a model from the [`tensorflow/models`](https://github.com/tensorflow/models) zoo repository 
-and integrated traffic light detection in our pipeline. 
-The `COCO` data set, among other image classes, contains a *traffic light* (`id`: 10) 
-and a model, pre-trained on this data set can be used to identify the traffic lights.
-
-This, however does not detect the colors on the traffic light. 
-For detecting the color, we first crop part of the image containing the 
-traffic light, and then converted an image to `HSV` color space.
-In `HSV` we exprimentally found the thresholds that correspond to 
-masks of red, yellow, and green lights.
-We then used these thresholds to detect the current light signal.
-
-The pipeline description is as follows:
-
-1. upon receiving an image, we the `image_cb` callback is called in `tl_detector`
-
-<img width="300" alt="camera_image" src="./imgs/camera_image_sim.png">
-
-2. the image is converted from  `sensor_msgs/Image` to `numpy array` and passed to the classifier
-
-3. the detection step is executed on the image, returning `classes`, `scores`, and `boxes`
-
-4. we collect all the traffic lights with the detection probability greater then a threshold
-
-5. we then use the detection boxes to crop these traffic lights from the image 
-
-![Cropped detected traffic light][cropped_traffic_light]
-
-6. detect the color
-
-[red1]: ./imgs/tl_detected_red.png
-[yellow1]: ./imgs/tl_detected_yellow.png
-[green1]: ./imgs/tl_detected_green.png
-
-| red | yellow | green |
-|-----|--------|-------|
-|![red][red1] | ![yellow][yellow1] | ![green][green1] |
-
-
-6. finally, we return the detected color to `tl_detector`
-
-Here we see the `RViz` visualization of the `/image_color` topic and the corresponding
-output from the classifier
-
-[gif]: ./imgs/classifier.gif
-![Classifier][gif]
 
 
 ## Track Test
