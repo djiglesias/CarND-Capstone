@@ -68,24 +68,18 @@ In the event that a traffic light is green, the simulator will proceed as before
 
 ## Traffic Light Classifier
 
-Our team explored two methods of classifying the state of a traffic light:
-1. Pre-trained 
-`SSD MobileNet` model pre-trained on the [`COCO`](http://cocodataset.org/#home) data set.
-2. ...
-
-### SSD MobileNet Classifier
-
 Using a model from the [`tensorflow/models`](https://github.com/tensorflow/models) zoo repository and integrated traffic light detection in our pipeline. The `COCO` data set, among other image classes, contains a *traffic light* (`id`: 10) and a model, pre-trained on this data set can be used to identify the traffic lights. This, however does not detect the colors on the traffic light. 
 For detecting the color, we first crop part of the image containing the 
 traffic light, and then converted an image to `HSV` color space.
 In `HSV` we exprimentally found the thresholds that correspond to 
 masks of red, yellow, and green lights.
-We then used these thresholds to detect the current light signal. The classify pipeline proceded as follows:
+We then used these thresholds to detect the current light signal. The classifier pipeline proceded as follows:
 
 1. A new image is received from the simulator to the image callback function, `image_cb`, in the `tl_detector` node which subscribes to ROS topic `/image_color`.
 
 <p align="center">
     <img src="./res/camera_image_sim.png" width=350>
+    <img src="./res/full_image.png" width=350>
 </p>
 
 2. The image is converted from a ROS message type `sensor_msgs/Image` to a `numpy array` for compatibility with OpenCV functions used by the TLClassifier.
@@ -97,17 +91,18 @@ We then used these thresholds to detect the current light signal. The classify p
 5. The bounding boxes that meet the threshold are used to crop traffic light images into a series of smaller images containing only the traffic lights.
 
 <p align="center">
-    <img src="./res/camera_image_sim_1.png" width=150>
-    <img src="./res/camera_image_sim_2.png" width=150>
-    <img src="./res/camera_image_sim_3.png" width=150>
+    <img src="./res/camera_image_sim_1.png" height=285>
+    <img src="./res/camera_image_sim_2.png" height=285>
+    <img src="./res/camera_image_sim_3.png" height=285>
+    <img src="./res/cropped_tl.png" height=285>
 </p>
 
 6. The images are conditioned for color to produce a grey scaled image of the traffic light. The coordinates of the lighter regions of the image are averaged to return the position of the active light which is either red (left), yellow (center), or green (right).
 
 <p align="center">
-    <img src="./res/tl_detected_red.png" width=150 title="Red">
-    <img src="./res/tl_detected_yellow.png" width=150>
-    <img src="./res/tl_detected_green.png" width=150>
+    <img src="./res/tl_detected_red.png" height=350 title="Red">
+    <img src="./res/tl_detected_yellow.png" height=350>
+    <img src="./res/tl_detected_green.png" height=350>
 </p>
 
 6. The traffic light state is returned to the `tl_detector` node. Which can be visualized using `RViz` subscribed to the `/image_color` topic with a terminal open.
@@ -115,10 +110,6 @@ We then used these thresholds to detect the current light signal. The classify p
 <p align="center">
     <img src="./res/classifier.gif" width=550>
 </p>
-
-### Other Method Used
-
-...
 
 ## Unity Simulator
 
