@@ -108,7 +108,7 @@ We then used these thresholds to detect the current light signal. The classifier
 6. The traffic light state is returned to the `tl_detector` node. Which can be visualized using `RViz` subscribed to the `/image_color` topic with a terminal open.
 
 <p align="center">
-    <img src="./res/classifier.gif" width=550>
+    <img src="./res/classifier.gif">
 </p>
 
 ## Unity Simulator
@@ -125,6 +125,9 @@ This program is rather computation intensive resulting in generic laptops and PC
 
 - running the simulator with screen resolution at 640x480 and the graphics quality as fastest provided the best result for reducing the required rendering by the computer
 
+<p align="center">
+    <img src="./res/unity_simulator.gif">
+</p>
 
 ## Track Test
 
