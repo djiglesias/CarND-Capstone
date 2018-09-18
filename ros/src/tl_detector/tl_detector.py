@@ -44,6 +44,7 @@ class TLDetector(object):
         # Load configurations.
         config_string = rospy.get_param('/traffic_light_config')
         self.config = yaml.load(config_string)
+        self.is_site = self.config["is_site"]
 
         # ROS Publisher.
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
@@ -227,7 +228,7 @@ class TLDetector(object):
                     line_wp_idx = temp_wp_idx
 
         # If there is an intersection nearby.
-        if closest_light:
+        if closest_light or self.is_site:
             state = self.get_light_state(closest_light)
             return line_wp_idx, state
 
