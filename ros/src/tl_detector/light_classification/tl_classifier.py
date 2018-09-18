@@ -4,6 +4,7 @@ import tensorflow as tf
 import numpy as np
 import cv2
 import glob
+import os, os.path
 from functools import partial
 
 
@@ -12,36 +13,54 @@ class TLClassifier(object):
         # TODO load classifier
         self.DETECTION_THRESHOLD = 0.9
         self.COCO_TL_NUM = 10
-        MODELCHUNK_BASE_DIR = rospy.get_param('~model_path')
+        # MODELCHUNK_BASE_DIR = rospy.get_param('~model_path')
         self.readsize = 1024
+        #
+        # # rospy.logwarn(MODEL_BASE_DIR)
+        # PATH_TO_MODEL = MODELCHUNK_BASE_DIR + '/rfcn_resnet101_coco_2018_01_28/frozen_inference_graph.pb'
+        # # reassemble the model from chunks. credit goes to team vulture for this idea
+        # output = open(PATH_TO_MODEL, 'wb')
+        # frozen_model_path = (MODELCHUNK_BASE_DIR + '/rfcn_resnet101_coco_2018_01_28/')
+        # chunks = glob.glob(frozen_model_path + 'chunk*')
+        # chunks.sort()
+        # for filename in chunks:
+        #     with open(filename, 'rb') as fileobj:
+        #         for chunk in iter(partial(fileobj.read, self.readsize), ''):
+        #             output.write(chunk)
+        # output.close()
 
-        # rospy.logwarn(MODEL_BASE_DIR)
-        PATH_TO_MODEL = MODELCHUNK_BASE_DIR + '/rfcn_resnet101_coco_2018_01_28/frozen_inference_graph.pb'
-        # reassemble the model from chunks. credit goes to team vulture for this idea
-        output = open(PATH_TO_MODEL, 'wb')
-        frozen_model_path = (MODELCHUNK_BASE_DIR + '/rfcn_resnet101_coco_2018_01_28/')
-        chunks = glob.glob(frozen_model_path + 'chunk*')
-        chunks.sort()
-        for filename in chunks:
-            with open(filename, 'rb') as fileobj:
-                for chunk in iter(partial(fileobj.read, self.readsize), ''):
-                    output.write(chunk)
-        output.close()
-        rospy.loginfo("Model recreated to run for TL detection")
+        #
+        # self.detection_graph = tf.Graph()
+        # with self.detection_graph.as_default():
+        #     od_graph_def = tf.GraphDef()
+        #     with tf.gfile.GFile(PATH_TO_MODEL, 'rb') as fid:
+        #         serialized_graph = fid.read()
+        #         od_graph_def.ParseFromString(serialized_graph)
+        #         tf.import_graph_def(od_graph_def, name='')
 
+        tf.reset_default_graph()
+        config = tf.ConfigProto(
+            # gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.4),
+            # device_count={'GPU': 1}
+        )
+        model = os.path.join(os.getcwd(), 'light_classification/frozen_inference_graph.pb')
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()
-            with tf.gfile.GFile(PATH_TO_MODEL, 'rb') as fid:
+            with tf.gfile.GFile(model, 'rb') as fid:
                 serialized_graph = fid.read()
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
-            self.image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
-            self.d_boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
-            self.d_scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
-            self.d_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
-            self.num_d = self.detection_graph.get_tensor_by_name('num_detections:0')
-        self.sess = tf.Session(graph=self.detection_graph)
+
+        # self.session = tf.Session(config=config, graph=self.detection_graph)
+
+        self.image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
+        self.d_boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
+        self.d_scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
+        self.d_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
+        self.num_d = self.detection_graph.get_tensor_by_name('num_detections:0')
+        self.sess = tf.Session(config=config, graph=self.detection_graph)
+        rospy.loginfo("Model recreated to run for TL detection")
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
