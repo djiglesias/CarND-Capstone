@@ -20,13 +20,11 @@ from PIL import Image, ImageDraw
 
 
 class TLClassifier(object):
+
     def __init__(self):
         tf.reset_default_graph()
-        config = tf.ConfigProto(
-            # gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.4),
-            # device_count={'GPU': 1}
-        )
-        model = os.path.join(os.getcwd(), 'light_classification/frozen_inference_graph.pb')
+        config = tf.ConfigProto()
+        model = os.path.join(os.getcwd(), 'light_classification/models/rfcn_resnet101_coco_2018_01_28/frozen_inference_graph.pb')
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()
@@ -37,6 +35,7 @@ class TLClassifier(object):
 
         self.session = tf.Session(config=config, graph=self.detection_graph)
         self.tl_id = LABELS[9]['id'] # 'name': u'traffic light'
+
 
     def crop_traffic_light(self, box, image):
         """
@@ -50,10 +49,6 @@ class TLClassifier(object):
         ymin, xmin, ymax, xmax = box
         (left, right, top, bottom) = (xmin * im_width, xmax * im_width,
                                       ymin * im_height, ymax * im_height)
-        # box_color = (0, 255, 0)
-        # draw.line([(left, top), (left, bottom), (right, bottom),
-        #            (right, top), (left, top)], width=8, fill=box_color)
-        # here we get a traffic classified traffic light
         traffic_light = image_pil.crop([int(left), int(top), int(right), int(bottom)])
         return traffic_light
 
@@ -84,6 +79,7 @@ class TLClassifier(object):
             feed_dict={image_tensor: image_np_expanded})
         return boxes, scores, classes, num
 
+
     def detect_pixel_ratio(self, image_hsv, mask, intensity_threshold):
         bool_mask = mask > 0
         template = np.zeros_like(image_hsv, np.uint8)
@@ -94,6 +90,7 @@ class TLClassifier(object):
         target_pixels = len(np.where(template_gray >= intensity_threshold)[0])
         other_pixels = len(np.where(template_gray < intensity_threshold)[0])
         return target_pixels, other_pixels
+
 
     def detect_traffic_light(self, image_pil):
         """
