@@ -8,3 +8,7 @@ devel
 
 profile.tmp
 .vscode/
+bag/
+*.bag
+rviz/
+*rviz
