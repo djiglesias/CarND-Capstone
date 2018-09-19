@@ -11,7 +11,7 @@ from functools import partial
 class TLClassifier(object):
     def __init__(self):
         # TODO load classifier
-        self.DETECTION_THRESHOLD = 0.9
+        self.DETECTION_THRESHOLD = 0.2
         self.COCO_TL_NUM = 10
         # MODELCHUNK_BASE_DIR = rospy.get_param('~model_path')
         self.readsize = 1024

@@ -195,7 +195,7 @@ class TLDetector(object):
             return TrafficLight.UNKNOWN
 
 
-        return statusOfLightFromCameraImage
+        # return statusOfLightFromCameraImage
 
         #NOT FINISHED but for Testing use simulator data initially but in real data light state should come from classifier
         #return light.state # --> used for when running simulator 
@@ -228,11 +228,11 @@ class TLDetector(object):
                     line_wp_idx = temp_wp_idx
 
         # If there is an intersection nearby.
-        if closest_light or self.is_site:
-            state = self.get_light_state(closest_light)
-            return line_wp_idx, state
-
-        return -1, TrafficLight.UNKNOWN
+        # if closest_light or self.is_site:
+        # This was causing error for rosbags -> classifier was not called
+        state = self.get_light_state(closest_light)
+        return line_wp_idx, state
+        # return -1, TrafficLight.UNKNOWN
 
 
 if __name__ == '__main__':
